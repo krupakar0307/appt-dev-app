@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+IMAGE_TAG=$(cat gitCommit.txt)
+
+
+docker build -t $REPOSITORY .
+
+docker tag $REPOSITORY:latest $DOCKER_REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+docker login -u $DOCKER_REGISTRY -p $DOCKER_PASSWORD &>/dev/null
+
+docker push $DOCKER_REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+docker rmi -f $DOCKER_REGISTRY/$REPOSITORY:$IMAGE_TAG
+

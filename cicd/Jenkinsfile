@@ -1,0 +1,64 @@
+pipeline {
+  agent none
+  environment {
+    REPOSITORY = 'appt-dev-nodejs'
+    NAMESPACE = 'appt-dev-app'
+    DOCKER_REGISTRY = credentials('docker-registry-id')
+    DOCKER_PASSWORD = credentials('docker-pass')
+
+  }
+    options {
+        skipDefaultCheckout(true)
+    }
+  stages {
+    stage('Build') {
+        agent {
+            docker {
+                image 'node:16'
+            }
+        }
+        options {
+            skipDefaultCheckout(false)
+        }
+      steps {
+        sh 'git rev-parse --short HEAD > gitCommit.txt'
+        echo 'Building...'
+        sh 'npm config set fund false '
+        sh 'npm install'
+        stash name: 'appt-dev-app', useDefaultExcludes: false
+
+      }
+    }
+    stage ('Push to registry') {
+        agent {
+            docker {
+                image '9966113745/appt-dev-base:latest'
+            }
+        }        
+        steps{
+            sh 'rm -rf *'
+            unstash 'appt-dev-app'
+            sh 'ls -a'
+            sh './cicd/build'
+
+        }
+    }
+    stage('Deploy') {
+      agent any
+      environment {
+        REPOSITORY = 'appt-dev-nodejs'
+        NAMESPACE = 'appt-dev-app'
+        DOCKER_REGISTRY = credentials('docker-registry-id')
+        DOCKER_PASSWORD = credentials('docker-pass')
+      }
+      steps {
+        echo 'Deploying...'
+        unstash 'appt-dev-app'
+        sh 'ls -a'
+        sh 'cat gitCommit.txt'
+        sh 'sleep 10'
+        // sh './cicd/deployment'
+      }
+    }
+  }
+}

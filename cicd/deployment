@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+IMAGE_TAG=$(cat gitCommit.txt)
+
+helm upgrade --install $REPOSITORY -f cicd/app-chart/values.yaml --set image.repository="$DOCKER_REGISTRY/$REPOSITORY" --set image.tag=$IMAGE_TAG app-chart/
